@@ -33,6 +33,11 @@ def get_pets(name):
         return pets[name], 200
     else:
         return {"message": "Pet not found"}, 404
+    
+@app.route("/large-process/")
+def large_process():
+    return {"message": "request accepted"}, 201
+
 if __name__ == '__main__':
     app.run(debug=True,
             port=8002,
