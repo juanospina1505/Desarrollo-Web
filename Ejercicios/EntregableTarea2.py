@@ -18,97 +18,92 @@ def get_token_role():
     except:
         return None
 
-def manager_required(f):
+def admin_required(f):
     @jwt_required()
     def custom_validation(*args, **kwargs):
         role = get_token_role()
-        if role == 'manager':
+        if role == 'admin':
             return f(*args, **kwargs)
         else:
             print(f"Debug Role: {role}")
             return {
                 'error': 'Acceso denegado',
-                'message': 'Solo los manager pueden acceder a este endpoint'
+                'message': 'Solo los admin pueden acceder a este endpoint'
             }, 403
     return custom_validation
 @app.route('/')
 def hello():
-    return "<h1> Hola Mundo </h1>"
+    #mensaje = "<h1>Bienvenido, para acceder a un video juego añade a la URL \"/videogames/nombre_videjuego\"</h1>\n<h2>Opciones:</h2>\n<h3> - /videogames/FC25</h3><h3>\n - /videogames/GTAV</h3><h3> - /videogames/It_Takes_Two</h3><h3>\n - /videogames/F125</h3>"
+    mensaje = """
+                <h1>Bienvenido, para acceder a un video juego añade a la URL \"/videogames/nombre_videjuego\"</h1>
+                <h2>Videojuegos disponibles:</h2>
+                <ul>
+                    <h3>- /videogames/EA_SPORTS_FC_25</h3>
+                    <h3>- /videogames/Grand_Theft_Auto_V</h3>
+                    <h3>- /videogames/It_Takes_Two</h3>
+                    <h3>- /videogames/F1_25</h3>
+                    <h3>- /videogames/Minecraft</h3>
+                </ul>
+            """
 
-@app.route('/hello/<string:name>')
-def grettings(name):
-    return "<h1> Hola Mundo "+ name +  "</h1>"
+    return mensaje
 
-saludo = {"ES": "Hola Mundo",
-          "EN": "Hello World"}
+videogames = { 
+            "1": {"nombre": "EA_SPORTS_FC_25", "plataforma": "PS5", "fecha": 2024, "genero": "Deportes", "clasificacion": "+3", "precio": 280000},
+            "2": {"nombre": "Grand_Theft_Auto_V", "plataforma": "PC", "fecha": 2013, "genero": "Acción/Aventura", "clasificacion": "+18","precio": 90000},
+            "3": {"nombre": "It_Takes_Two", "plataforma": "PS5", "fecha": 2021, "genero": "Aventura", "clasificacion": "+12", "precio": 150000},
+            "4": {"nombre": "F1_25", "plataforma": "PS5", "fecha": 2025, "genero": "Carreras", "clasificacion": "+3", "precio": 300000},
+            "5": {"nombre": "Minecraft", "plataforma": "PC", "fecha": 2011, "genero": "Sandbox", "clasificacion": "+7", "precio": 120000}
+            }
 
-@app.route('/dynamic-hello/<string:name>/')
-def data(name):
-    language = request.args.get("language", "EN")
-    uppercase = request.args.get("uppercase", False)
-    phase = saludo[language] + " " + name
-    if uppercase == "True" or uppercase == "true":
-        phase = phase.upper()
-    return "<h1>" + phase + "</h1>"
-
-furnitures = { "1": {"name": "Mesa Redonda", "width": 150 , "depth": 150 , "heigh": 150, "price": 110000},
-        "2": {"name": "Mesa Rectangular", "width": 150 , "depth": 60 , "heigh": 120, "price": 120000},
-        "3": {"name": "Silla triangular", "width": 85 , "depth": 65 , "heigh": 130, "price": 60000} }
-
-
-@app.route('/api/furniture/<string:id>/',methods = ["GET", "DELETE"])
+@app.route("/videogames/<string:name>/")
 @jwt_required()
-def get_furniture(id):   
-    print(f"METHOD {request.method}")
-    if request.method == "GET":
-        if id in furnitures:
-            return furnitures[id], 200
-        else:
-            return {"messsage": "forniture with "+id+" not found"}, 404
-    else:
-        if id in furnitures:
-            element = furnitures[id]
-            del furnitures[id]
-            return element , 200
-        else:
-            return {}, 204
+def get_videogame(name):
+    for videogame in videogames.values():
+        if videogame["nombre"] == name:
+            return videogame, 200
 
-@app.route('/api/furnitures/')
+    return {"message": "Videogame not found"}, 404
+
+@app.route('/api/filter_videogames/')
 @jwt_required()
-def get_furnitures(): 
-    width = request.args.get("width",0)
-    heigh =  request.args.get("heigh",0)   
-    filtered = list(filter(lambda key : furnitures[key]["width"] >= int(width) 
-                           and furnitures[key]["heigh"] >= int(heigh) , furnitures))
-    return list(map(lambda k: furnitures[k], filtered))
+def filter_videogames(): 
+    plataforma = request.args.get("plataforma","")              
+    genero = request.args.get("genero","")  
+    precio_max = request.args.get("precio_max", "")       
+    filtered = list(filter(lambda key:(plataforma == "" or videogames[key]["plataforma"] == plataforma)
+            and (genero == "" or videogames[key]["genero"] == genero)
+            and (precio_max == "" or videogames[key]["precio"] <= int(precio_max)),videogames))
+    
+    return list(map(lambda k: videogames[k], filtered))
 
-@app.route('/api/furniture/', methods = ["POST"])
-@manager_required
-def post_furnitures():
+@app.route('/api/videogames/', methods = ["POST"])
+@admin_required
+def post_videogames():
     body = request.json
     copy = body.copy()
     new_id = body["id"]
-    if new_id in furnitures:
-        return {"message": "Fornture with id "+new_id + " already exist" }, 409    
+    if new_id in videogames:
+        return {"message": "videogame with id "+ new_id + " already exist" }, 409    
     else:
         del body["id"]
-        furnitures[new_id] = body   
+        videogames[new_id] = body   
         return copy, 201
-
-@app.route('/api/furniture/<string:id>/', methods=["PATCH"])
+    
+@app.route('/api/videogames/',methods = ["GET", "DELETE"])
 @jwt_required()
-def put_furniture(id):
-    body = request.json
-    price = body.get("price")
-    name = body.get("name")
-    if id in furnitures:
-        if price != None:
-            furnitures[id]["price"] = price
-        if name != None:
-            furnitures[id]["name"] = name
-        return furnitures[id], 200
+def get_videogames():   
+    videogame_id = request.args.get("id", "")
+    print(f"METHOD {request.method}")
+    if request.method == "GET":
+        return videogames, 200  
     else:
-        return {"messsage": "forniture with "+id+" not found"}, 404
+        if videogame_id in videogames:
+            element = videogames[videogame_id]
+            del videogames[videogame_id]
+            return element , 200
+        else:
+            return {}, 204      
 
 users = [
             {
