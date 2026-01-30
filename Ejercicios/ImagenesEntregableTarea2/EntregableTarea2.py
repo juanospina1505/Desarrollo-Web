@@ -150,6 +150,39 @@ def get_videogames():
         else:
             return {}, 204      
 
+@app.route('/api/admin/signIn/admin', methods= ['POST'])
+@jwt_required()
+def sign_in_admin():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return {
+            "error": "Acceso denegado",
+            "message": "Solo un administrador puede crear otro administrador"
+        }, 403
+    
+    if not request.json or 'username' not in request.json or 'password' not in request.json:
+        return { 'error': 'Datos inválidos', 
+                'message': 'Se requieren username y password'}, 400
+    else:
+        username = request.json['username']
+        password = request.json['password']
+        if len(check_if_user_exist(username) ) >0:
+            return {
+            'error': 'Datos inválidos',
+            'message': 'el usuario ya existe'}, 400
+        else:
+            user_id = 'user-'+str(uuid.uuid4())
+            new_user = {
+                'user_id': user_id,
+                'username': username,
+                'password_hash': generate_password_hash(password),
+                'created_at': datetime.now(),
+                'role': 'admin'
+            }
+            user_created = create_user(new_user)
+            
+            return { 'username': username, '_id': user_created["_id"], 'role': 'admin'}, 201
+
 @app.route('/api/admin/signIn/manager', methods= ['POST'])
 def sign_in_manager():
     if not request.json or 'username' not in request.json or 'password' not in request.json:
