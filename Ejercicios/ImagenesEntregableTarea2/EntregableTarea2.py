@@ -1,8 +1,8 @@
-from flask import Flask, request
+from flask import Flask, request, render_template_string
 import uuid
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-#from bson.objectid import ObjectId
+from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt
 
@@ -76,80 +76,169 @@ def admin_required(f):
                 'message': 'Solo los admin pueden acceder a este endpoint'
             }, 403
     return custom_validation
+
 @app.route('/')
 def hello():
     #mensaje = "<h1>Bienvenido, para acceder a un video juego añade a la URL \"/videogames/nombre_videjuego\"</h1>\n<h2>Opciones:</h2>\n<h3> - /videogames/FC25</h3><h3>\n - /videogames/GTAV</h3><h3> - /videogames/It_Takes_Two</h3><h3>\n - /videogames/F125</h3>"
-    mensaje = """
-                <h1>Bienvenido, para acceder a un video juego añade a la URL \"/videogames/nombre_videjuego\"</h1>
-                <h2>Videojuegos disponibles:</h2>
-                <ul>
-                    <h3>- /videogames/EA_SPORTS_FC_25</h3>
-                    <h3>- /videogames/Grand_Theft_Auto_V</h3>
-                    <h3>- /videogames/It_Takes_Two</h3>
-                    <h3>- /videogames/F1_25</h3>
-                    <h3>- /videogames/Minecraft</h3>
-                </ul>
-            """
+    html = """
+    <!doctype html>
+    <html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Videogames API</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #111; }
+            header { padding: 36px 18px; background: linear-gradient(135deg,#111827,#1f2937); color: #fff; }
+            .container { max-width: 980px; margin: 0 auto; padding: 18px; }
+            .subtitle { opacity: .9; margin-top: 6px; }
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+            .card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 8px 24px rgba(17,24,39,.08); }
+            .card h3 { margin: 0 0 10px 0; font-size: 18px; }
+            .pill { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+            .link { display: inline-block; margin-top: 10px; text-decoration: none; color: #fff; background: #4f46e5; padding: 8px 12px; border-radius: 10px; }
+            .link:hover { filter: brightness(.95); }
+            .hint { margin-top: 20px; padding: 14px 16px; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; }
+            code { background: #111827; color: #fff; padding: 3px 7px; border-radius: 6px; font-size: 13px; }
+            footer { color: #6b7280; font-size: 12px; padding: 24px 0; text-align: center; }
+            ul { padding-left: 18px; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <h1>🎮 Videogames API</h1>
+            </div>
+        </header>
 
-    return mensaje
+        <main class="container">
 
-videogames = { 
+            <section class="hint">
+                <h2>📌 ¿Qué es esta API?</h2>
+                <p>
+                    Esta API permite gestionar y consultar videojuegos mediante endpoints REST.
+                    Algunos endpoints están protegidos con JWT y requieren rol de administrador.
+                </p>
+            </section>
+
+            <section class="grid">
+
+                <div class="card">
+                    <h3>🔎 Obtener videojuegos</h3>
+                    <span class="pill">GET</span>
+                    <p>Listar o filtrar videojuegos disponibles.</p>
+                    <p><code>/api/videogames</code></p>
+                    <p><code>/api/videogames?plataforma=PS5</code></p>
+                    <p>Requiere LogIn</p>
+                </div>
+
+                <div class="card">
+                    <h3>🎯 Buscar por nombre</h3>
+                    <span class="pill">GET</span>
+                    <p>Acceder a un videojuego específico por su nombre.</p>
+                    <p><code>/videogames/Minecraft</code></p>
+                    <p>Requiere LogIn</p>
+                </div>
+
+                <div class="card">
+                    <h3>➕ Crear videojuego</h3>
+                    <span class="pill">POST</span>
+                    <p>Endpoint protegido. Solo administradores.</p>
+                    <p><code>/api/videogames/</code></p>
+                    <p>Requiere token JWT</p>
+                </div>
+
+                <div class="card">
+                    <h3>🔐 Seguridad</h3>
+                    <p>Autenticación mediante JWT.</p>
+                    <p>Header requerido:</p>
+                    <p><code>Authorization: Bearer &lt;token&gt;</code></p>
+                </div>
+
+            </section>
+
+            <section class="hint">
+                <h3>🧪 Ejemplo rápido</h3>
+                <p>
+                    Prueba acceder directamente a:
+                    api/videogames/
+                </p>
+            </section>
+
+        </main>
+    </body>
+    </html>
+    """
+
+    return render_template_string(html)
+
+"""videogames = { 
             "1": {"nombre": "EA_SPORTS_FC_25", "plataforma": "PS5", "fecha": 2024, "genero": "Deportes", "clasificacion": "+3", "precio": 280000},
             "2": {"nombre": "Grand_Theft_Auto_V", "plataforma": "PC", "fecha": 2013, "genero": "Acción/Aventura", "clasificacion": "+18","precio": 90000},
             "3": {"nombre": "It_Takes_Two", "plataforma": "PS5", "fecha": 2021, "genero": "Aventura", "clasificacion": "+12", "precio": 150000},
             "4": {"nombre": "F1_25", "plataforma": "PS5", "fecha": 2025, "genero": "Carreras", "clasificacion": "+3", "precio": 300000},
             "5": {"nombre": "Minecraft", "plataforma": "PC", "fecha": 2011, "genero": "Sandbox", "clasificacion": "+7", "precio": 120000}
             }
+"""  
+def normalize_id(item):
+    item["_id"] = str(item["_id"])
+    return item    
 
-@app.route("/videogames/<string:name>/")
+@app.route('/api/videogames/')
 @jwt_required()
-def get_videogame(name):
-    for videogame in videogames.values():
-        if videogame["nombre"] == name:
-            return videogame, 200
-
-    return {"message": "Videogame not found"}, 404
-
-@app.route('/api/filter_videogames/')
-@jwt_required()
-def filter_videogames(): 
+def videogames(): 
     plataforma = request.args.get("plataforma","")              
     genero = request.args.get("genero","")  
-    precio_max = request.args.get("precio_max", "")       
-    filtered = list(filter(lambda key:(plataforma == "" or videogames[key]["plataforma"] == plataforma)
-            and (genero == "" or videogames[key]["genero"] == genero)
-            and (precio_max == "" or videogames[key]["precio"] <= int(precio_max)),videogames))
-    
-    return list(map(lambda k: videogames[k], filtered))
+    precio_max = request.args.get("precio_max", "0")       
+    query = {}
 
-@app.route('/api/videogames/', methods = ["POST"])
+    if plataforma != "":
+        query["plataforma"] = plataforma
+
+    if genero != "":
+        query["genero"] = genero
+
+    if int(precio_max) > 0:
+        query["precio"] = {"$lte": int(precio_max)}
+
+    global videogames_collection
+    result = list(videogames_collection.find(query))
+
+    results = list(map(lambda vg: normalize_id(vg), result))
+
+    return results, 200
+
+def insert_videogame(body):
+    global videogames_collection    
+    result = videogames_collection.insert_one(body)
+    body["_id"] = str(result.inserted_id)
+    return body
+
+
+@app.route('/api/agregar_videogames/', methods = ["POST"])
 @admin_required
 def post_videogames():
-    body = request.json
-    copy = body.copy()
-    new_id = body["id"]
-    if new_id in videogames:
-        return {"message": "videogame with id "+ new_id + " already exist" }, 409    
-    else:
-        del body["id"]
-        videogames[new_id] = body   
-        return copy, 201
+    return insert_videogame(request.json), 200    
     
-@app.route('/api/videogames/',methods = ["GET", "DELETE"])
+@app.route('/api/videogames/<string:id>',methods = ["GET", "DELETE"])
 @jwt_required()
-def get_videogames():   
-    videogame_id = request.args.get("id", "")
+def get_videogames(id):
     print(f"METHOD {request.method}")
-    if request.method == "GET":
-        return videogames, 200  
-    else:
-        if videogame_id in videogames:
-            element = videogames[videogame_id]
-            del videogames[videogame_id]
-            return element , 200
+    global videogames_collection
+    found = videogames_collection.find_one({"_id": ObjectId(id)})
+    found["_id"] = str(found["_id"])
+    if request.method == "GET":        
+        if id is not None:
+            return found, 200
         else:
-            return {}, 204      
-
+            return {"messsage": "videogame with "+id+" not found"}, 404       
+    else:
+        if id is not None:
+            videogames_collection.delete_one({"_id": ObjectId(id)})
+            return found , 200
+        else:
+            return {}, 204
+        
 @app.route('/api/admin/signIn/admin', methods= ['POST'])
 @jwt_required()
 def sign_in_admin():

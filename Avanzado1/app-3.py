@@ -74,7 +74,7 @@ def manager_required(f):
     @jwt_required()
     def custom_validation(*args,**kwargs):
         role = get_token_role()
-        if role == 'manager':
+        if role == 'manager' or role == 'admin':
             return f(*args,**kwargs)
         else:
             print(f"Debug Role: {role}")
@@ -106,64 +106,76 @@ def data(name):
         phase = phase.upper()
     return "<h1>" + phase + "</h1>"
 
-furnitures = { "1": {"name": "Mesa Redonda", "width": 150 , "depth": 150 , "heigh": 150, "price": 110000},
-        "2": {"name": "Mesa Rectangular", "width": 150 , "depth": 60 , "heigh": 120, "price": 120000},
-        "3": {"name": "Silla triangular", "width": 85 , "depth": 65 , "heigh": 130, "price": 60000} }
+#furnitures = { "1": {"name": "Mesa Redonda", "width": 150 , "depth": 150 , "heigh": 150, "price": 110000},
+#        "2": {"name": "Mesa Rectangular", "width": 150 , "depth": 60 , "heigh": 120, "price": 120000},
+#        "3": {"name": "Silla triangular", "width": 85 , "depth": 65 , "heigh": 130, "price": 60000} }
 
 
 @app.route('/api/furniture/<string:id>/',methods = ["GET", "DELETE"])
 @jwt_required()
 def get_furniture(id):   
     print(f"METHOD {request.method}")
-    if request.method == "GET":
-        if id in furnitures:
-            return furnitures[id], 200
+    global furniture_collection
+    found = furniture_collection.find_one({"_id": ObjectId(id)})
+    found["_id"] = str(found["_id"])
+    if request.method == "GET":        
+        if id is not None:
+            return found, 200
         else:
-            return {"messsage": "forniture with "+id+" not found"}, 404
+            return {"messsage": "furniture with "+id+" not found"}, 404
     else:
-        if id in furnitures:
-            element = furnitures[id]
-            del furnitures[id]
-            return element , 200
+        if id is not None:
+            furniture_collection.delete_one({"_id": ObjectId(id)})
+            return found , 200
         else:
             return {}, 204
+
+def normalize_id(item):
+    item["_id"] = str(item["_id"])
+    return item    
 
 @app.route('/api/furnitures/')
 @jwt_required()
 def get_furnitures(): 
     width = request.args.get("width",0)
     heigh =  request.args.get("heigh",0)   
-    filtered = list(filter(lambda key : furnitures[key]["width"] >= int(width) 
-                           and furnitures[key]["heigh"] >= int(heigh) , furnitures))
-    return list(map(lambda k: furnitures[k], filtered))
+    query = {"width" : {"$gte": int(width) },
+             "heigh" : {"$gte": int(heigh) }}
+    global furniture_collection    
+    result = list(furniture_collection.find(query))
+    results = list(map(lambda fur: normalize_id(fur), result))
+    return result, 200
+
+def insert_furniture(body):
+    global furniture_collection    
+    result = furniture_collection.insert_one(body)
+    body["_id"] = str(result.inserted_id)
+    return body
 
 @app.route('/api/furniture/', methods = ["POST"])
 @manager_required
-def post_furnitures():
-    body = request.json
-    copy = body.copy()
-    new_id = body["id"]
-    if new_id in furnitures:
-        return {"message": "Fornture with id "+new_id + " already exist" }, 409    
-    else:
-        del body["id"]
-        furnitures[new_id] = body   
-        return copy, 201
-    
+def post_furnitures():   
+    return insert_furniture(request.json), 200    
+ 
 @app.route('/api/furniture/<string:id>/', methods=["PATCH"])
 @jwt_required()
 def put_furniture(id):
     body = request.json
     price = body.get("price")
     name = body.get("name")
-    if id in furnitures:
+    found = furniture_collection.find_one({"_id": ObjectId(id)})
+    query = {"$set":{}}
+    if found is not None:
         if price != None:
-            furnitures[id]["price"] = price
+            query["$set"]["price"] = price
         if name != None:
-            furnitures[id]["name"] = name
-        return furnitures[id], 200
+            query["$set"]["name"] = name
+        furniture_collection.update_one({"_id": ObjectId(id)}, query)
+        found = furniture_collection.find_one({"_id": ObjectId(id)})
+        found["_id"] = str(found["_id"])
+        return found , 200
     else:
-        return {"messsage": "forniture with "+id+" not found"}, 404
+        return {"messsage": "furniture with "+id+" not found"}, 404
     
 @app.route('/api/admin/signIn/manager', methods= ['POST'])
 #manager_required
