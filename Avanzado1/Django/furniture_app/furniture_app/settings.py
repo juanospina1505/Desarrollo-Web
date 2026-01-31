@@ -37,7 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'staticpages',
+    'rest_framework',      # 🎨 Django REST Framework - Interfaz HTML bonita
+    'static_pages',
+    'dynamic_pages',
+    'furniture_api'
 ]
 
 MIDDLEWARE = [
@@ -66,6 +69,19 @@ TEMPLATES = [
         },
     },
 ]
+# 🎨 CONFIGURACIÓN DE DJANGO REST FRAMEWORK
+# =========================================
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',  # 🎨 Interfaz HTML bonita
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+}
 
 WSGI_APPLICATION = 'furniture_app.wsgi.application'
 

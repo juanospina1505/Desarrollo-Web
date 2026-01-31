@@ -40,3 +40,27 @@ def home(_):
     </html>
     """
     return HttpResponse(html_content)
+
+def about(request):
+    """Página About estática"""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>📋 Acerca de</title>
+        <style>body { font-family: Arial; margin: 40px; }</style>
+    </head>
+    <body>
+        <h1>📋 Acerca del Catálogo de Muebles</h1>
+        <p>Esta es una página estática creada con Django.</p>
+        <p><strong>Características:</strong></p>
+        <ul>
+            <li>No usa base de datos</li>
+            <li>HTML fijo definido en views.py</li>
+            <li>Respuesta inmediata</li>
+        </ul>
+        <a href="/static-pages/home">← Volver al Home</a>
+    </body>
+    </html>
+    """
+    return HttpResponse(html_content)
