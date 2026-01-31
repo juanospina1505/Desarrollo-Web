@@ -29,4 +29,3 @@ class FurnitureItem(Document):
     
     def __str__(self):
         return f"{self.name} : {self.width}x{self.height}x{self.depth} {self.material}"
-    

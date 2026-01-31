@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-
+import mongoengine
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -132,3 +133,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+mongoengine.connect(
+    db=os.getenv('MONGO_DB', 'furniture_django'),
+    host=os.getenv(
+        'MONGO_URI',
+        'mongodb+srv://juanCa15:PORT34erySADF@cluster0.fgze7ac.mongodb.net/furniture_django?retryWrites=true&w=majority'
+    )
+)
