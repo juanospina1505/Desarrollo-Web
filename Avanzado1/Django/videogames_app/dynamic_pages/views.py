@@ -3,19 +3,16 @@ from . import models
 
 # Create your views here.
 
-def template_base(request, name):
-    page_title = "APP Django"
-    show_image = request.GET.get("show_image", True) == "True"
-    print(show_image)
+def template_home(request, name):
     context = {
-        'titulo_pagina' : page_title,
+        'titulo_pagina' : "VideoGames APP Django",
         'mi_nombre': name,
-        'show_img': show_image
+        'show_api_endpoints': True
     }
     return render(request,'base.html',context)
 
-def template_materials(request):
+def template_games(request):
     context = {
-        'furnitures': models.MATERIALS
+        'games': models.GAMES
     }
-    return render(request,'materials.html',context)
+    return render(request,'games.html',context)
