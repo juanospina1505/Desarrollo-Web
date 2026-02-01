@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-
+import mongoengine
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',      # 🎨 Django REST Framework - Interfaz HTML bonita
+    'static_pages',
+    'dynamic_pages',
+    'videogames_api'
 ]
 
 MIDDLEWARE = [
@@ -65,6 +70,19 @@ TEMPLATES = [
         },
     },
 ]
+# 🎨 CONFIGURACIÓN DE DJANGO REST FRAMEWORK
+# =========================================
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',  # 🎨 Interfaz HTML bonita
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+}
 
 WSGI_APPLICATION = 'videogames_app.wsgi.application'
 
@@ -115,3 +133,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+TATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+mongoengine.connect(
+    db=os.getenv('MONGO_DB', 'videogames_django'),
+    host=os.getenv(
+        'MONGO_URI',
+        'mongodb+srv://juanCa15:PORT34erySADF@cluster0.fgze7ac.mongodb.net/videogames_django?retryWrites=true&w=majority'
+    )
+)

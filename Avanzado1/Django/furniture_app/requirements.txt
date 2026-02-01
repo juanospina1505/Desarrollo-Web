@@ -1,0 +1,4 @@
+django==6.0.1
+djangorestframework==3.16.1
+mongoengine==0.29.1
+requests==2.32.3
